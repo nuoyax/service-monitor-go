@@ -1,6 +1,5 @@
 name: Build and Release
 
-# 仅在 push tag 时触发
 on:
   push:
     tags:
@@ -9,24 +8,34 @@ on:
 jobs:
   build:
     name: Build All Platforms
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, rhel-8] # 这里 rhel-8 用 self-host 或替换
-        goos: [windows, linux, linux]
-        goarch: [amd64, amd64, amd64]
+        include:
+          - name: Windows
+            goos: windows
+            goarch: amd64
+            runner: windows-latest
+          - name: Debian
+            goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+            pkg: deb
+          - name: RHEL
+            goos: linux
+            goarch: amd64
+            runner: ubuntu-latest
+            pkg: rpm
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
-      # 1. 拉取仓库
       - uses: actions/checkout@v3
 
-      # 2. 设置 Go
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.21"
 
-      # 3. 缓存 Go modules
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
@@ -37,22 +46,25 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      # 4. 编译可执行文件
-      - name: Build EXE/Binary
+      - name: Build Binary
         run: |
           echo "Current tag: ${{ github.ref_name }}"
-          BIN_NAME="service-monitor-${{ github.ref_name }}-${{ matrix.goos }}"
+          BIN_NAME="service-monitor-${{ github.ref_name }}-${{ matrix.name }}"
           if [ "${{ matrix.goos }}" == "windows" ]; then
             BIN_NAME="${BIN_NAME}.exe"
           fi
           mkdir -p ./bin
           GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ./bin/$BIN_NAME ./cmd/main.go
-        shell: bash
+          # Linux打包
+          if [ "${{ matrix.pkg }}" == "deb" ]; then
+            tar czf ./bin/${BIN_NAME}.tar.gz -C ./bin $(basename $BIN_NAME)
+          elif [ "${{ matrix.pkg }}" == "rpm" ]; then
+            tar czf ./bin/${BIN_NAME}.tar.gz -C ./bin $(basename $BIN_NAME)
+          fi
 
-      # 5. 创建 Release 并上传
-      - name: Create GitHub Release
+      - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./bin/service-monitor-${{ github.ref_name }}-${{ matrix.goos }}*
+          files: ./bin/service-monitor-${{ github.ref_name }}-${{ matrix.name }}*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
