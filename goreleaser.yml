@@ -1,53 +1,61 @@
 project_name: service-monitor
+# 构建输出目录
+dist: dist
+
+# 生成 release
+release:
+  github:
+    owner: nuoyax # 改成你自己的
+    name: service-monitor
+    draft: false
+    prerelease: false
+
 builds:
-  - id: service-monitor
+  - main: ./cmd/main.go
     goos:
       - windows
       - linux
     goarch:
       - amd64
-    main: ./cmd/main.go
+    ldflags:
+      - "-s -w"
     binary: service-monitor
-    ldflags: "-s -w"
-    goarm: 6
     env:
       - CGO_ENABLED=0
+
 archives:
-  - id: service-monitor
-    builds:
-      - service-monitor
-    format: tar.gz
+  - format: tar.gz
+    replacements:
+      darwin: macOS
+      windows: Windows
     files:
-      - LICENSE
-      - README.md
-    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
-nfpm:
-  deb:
-    name: service-monitor
-    arch: amd64
-    version: "{{.Version}}"
+      - ./bin/service-monitor*
+
+# Debian 包
+nfpkg:
+  - packager: deb
+    binary: service-monitor
+    package_name: service-monitor
+    files:
+      "/usr/local/bin/service-monitor": service-monitor
+    changelog:
+      use: git
+    maintainer: GitHub Actions <actions@github.com>
     license: MIT
-    maintainer: "GitHub Actions <actions@github.com>"
     section: utils
-    description: "Service Monitor Tool"
-    vendor: "GitHub"
-    homepage: "https://github.com/nuoyax/service-monitor-go"
-    bindir: /usr/local/bin
-    package_name: "service-monitor-{{.Version}}-{{.Os}}-{{.Arch}}.deb"
-  rpm:
-    name: service-monitor
-    arch: x86_64
-    version: "{{.Version}}"
+    priority: optional
+    description: Service Monitor Tool
+
+# RPM 包
+nfpkg:
+  - packager: rpm
+    binary: service-monitor
+    package_name: service-monitor
+    files:
+      "/usr/local/bin/service-monitor": service-monitor
+    changelog:
+      use: git
+    maintainer: GitHub Actions <actions@github.com>
     license: MIT
-    maintainer: "GitHub Actions <actions@github.com>"
-    description: "Service Monitor Tool"
-    vendor: "GitHub"
-    homepage: "https://github.com/nuoyax/service-monitor-go"
-    bindir: /usr/local/bin
-    package_name: "service-monitor-{{.Version}}-{{.Os}}-{{.Arch}}.rpm"
-changelog:
-  use: git
-release:
-  github:
-    owner: yourname
-    name: service-monitor
+    summary: Service Monitor Tool
+    group: Applications/System
