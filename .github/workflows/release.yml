@@ -7,15 +7,20 @@ on:
       - "v*.*.*"
 
 jobs:
-  build-windows:
-    name: Build Windows EXE and Release
-    runs-on: windows-latest
+  build:
+    name: Build All Platforms
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, rhel-8] # 这里 rhel-8 用 self-host 或替换
+        goos: [windows, linux, linux]
+        goarch: [amd64, amd64, amd64]
 
     steps:
       # 1. 拉取仓库
       - uses: actions/checkout@v3
 
-      # 2. 设置 Go 环境
+      # 2. 设置 Go
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -32,16 +37,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      # 4. 编译 Windows exe
-      - name: Build Windows EXE
+      # 4. 编译可执行文件
+      - name: Build EXE/Binary
         run: |
           echo "Current tag: ${{ github.ref_name }}"
-          go build -o ./bin/service-monitor-${{ github.ref_name }}.exe ./cmd/main.go
+          BIN_NAME="service-monitor-${{ github.ref_name }}-${{ matrix.goos }}"
+          if [ "${{ matrix.goos }}" == "windows" ]; then
+            BIN_NAME="${BIN_NAME}.exe"
+          fi
+          mkdir -p ./bin
+          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ./bin/$BIN_NAME ./cmd/main.go
+        shell: bash
 
-      # 5. 创建 Release 并上传 exe
+      # 5. 创建 Release 并上传
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./bin/service-monitor-${{ github.ref_name }}.exe
+          files: ./bin/service-monitor-${{ github.ref_name }}-${{ matrix.goos }}*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

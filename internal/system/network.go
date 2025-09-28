@@ -2,6 +2,7 @@ package system
 
 import (
 	"time"
+
 	"github.com/shirou/gopsutil/net"
 )
 
@@ -27,7 +28,7 @@ func GetNetSpeed() (upload float64, download float64) {
 
 	for _, stat := range ioStats {
 		if last, ok := lastNetIO[stat.Name]; ok {
-			uploadBytes := stat.BytesSent - last.BytesSent
+			uploadBytes := stat.BytesSent - last.BytesSent //:= 是一个非常常用的 短变量声明操作符 Go 会自动根据右边的值 推断变量类型。
 			downloadBytes := stat.BytesRecv - last.BytesRecv
 			totalUpload += uploadBytes
 			totalDownload += downloadBytes
