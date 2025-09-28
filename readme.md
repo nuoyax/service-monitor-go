@@ -70,3 +70,7 @@ GOOS=linux GOARCH=amd64 go build -o bin/project cmd/main.go
 
 Mac：
 GOOS=darwin GOARCH=amd64 go build -o bin/project cmd/main.go
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
