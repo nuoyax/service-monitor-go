@@ -48,3 +48,20 @@ go env -w GOPROXY=https://goproxy.cn,direct
 设置方法类似：
 
 go env -w GOPROXY=https://mirrors.aliyun.com/goproxy/,direct
+
+
+
+
+用通配符，动态返回 HTML
+
+如果你想让任何 templates/xxx.html 自动对应 /xxx，可以写：
+
+r.GET("/:page", func(c *gin.Context) {
+    page := c.Param("page") + ".html"
+    c.HTML(http.StatusOK, page, gin.H{})
+})
+
+
+访问 /monitor → 返回 monitor.html
+
+访问 /about → 返回 about.html
