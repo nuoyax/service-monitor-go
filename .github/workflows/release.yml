@@ -29,13 +29,16 @@ jobs:
     runs-on: ${{ matrix.runner }}
 
     steps:
+      # 1. Checkout repo
       - uses: actions/checkout@v3
 
+      # 2. Set up Go
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.21"
 
+      # 3. Cache Go modules
       - name: Cache Go modules
         uses: actions/cache@v3
         with:
@@ -46,26 +49,81 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      # 4. Install packaging tools (Linux)
+      - name: Install packaging tools
+        if: matrix.goos == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dpkg-dev rpm
+
+      # 5. Build Binary
       - name: Build Binary
         shell: bash
         run: |
           echo "Current tag: ${{ github.ref_name }}"
           BIN_NAME="service-monitor-${{ github.ref_name }}-${{ matrix.name }}"
+          mkdir -p ./bin
+          # Windows exe
           if [ "${{ matrix.goos }}" == "windows" ]; then
             BIN_NAME="${BIN_NAME}.exe"
-          fi
-          mkdir -p ./bin
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o ./bin/$BIN_NAME ./cmd/main.go
-          # Linux打包
-          if [ "${{ matrix.pkg }}" == "deb" ]; then
-            tar czf ./bin/${BIN_NAME}.tar.gz -C ./bin $(basename $BIN_NAME)
-          elif [ "${{ matrix.pkg }}" == "rpm" ]; then
-            tar czf ./bin/${BIN_NAME}.tar.gz -C ./bin $(basename $BIN_NAME)
+            GOOS=windows GOARCH=${{ matrix.goarch }} go build -o ./bin/$BIN_NAME ./cmd/main.go
+          else
+            # Linux binary
+            GOOS=linux GOARCH=${{ matrix.goarch }} go build -o ./bin/service-monitor ./cmd/main.go
           fi
 
+          # 打包 Debian
+          if [ "${{ matrix.pkg }}" == "deb" ]; then
+            PKG_DIR=package
+            mkdir -p $PKG_DIR/DEBIAN
+            mkdir -p $PKG_DIR/usr/local/bin
+            echo "Package: service-monitor" > $PKG_DIR/DEBIAN/control
+            echo "Version: ${{ github.ref_name }}" >> $PKG_DIR/DEBIAN/control
+            echo "Section: utils" >> $PKG_DIR/DEBIAN/control
+            echo "Priority: optional" >> $PKG_DIR/DEBIAN/control
+            echo "Architecture: amd64" >> $PKG_DIR/DEBIAN/control
+            echo "Maintainer: GitHub Actions <actions@github.com>" >> $PKG_DIR/DEBIAN/control
+            echo "Description: Service Monitor Tool" >> $PKG_DIR/DEBIAN/control
+            cp ./bin/service-monitor $PKG_DIR/usr/local/bin/service-monitor
+            dpkg-deb --build $PKG_DIR ./bin/service-monitor-${{ github.ref_name }}-Debian.deb
+          fi
+
+          # 打包 RPM
+          if [ "${{ matrix.pkg }}" == "rpm" ]; then
+            RPM_DIR=rpmbuild
+            mkdir -p $RPM_DIR/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+            # 将二进制放到 SOURCES
+            cp ./bin/service-monitor $RPM_DIR/SOURCES/service-monitor
+            # 简单 spec 文件
+            cat > $RPM_DIR/SPECS/service-monitor.spec <<EOF
+            Name: service-monitor
+            Version: ${{ github.ref_name }}
+            Release: 1
+            Summary: Service Monitor Tool
+            License: MIT
+            Group: Applications/System
+            BuildRoot: %{_tmppath}/%{name}-%{version}-build
+            %description
+            Service Monitor Tool
+            %prep
+            %build
+            %install
+            mkdir -p %{buildroot}/usr/local/bin
+            cp $RPM_DIR/SOURCES/service-monitor %{buildroot}/usr/local/bin/service-monitor
+            %files
+            /usr/local/bin/service-monitor
+            EOF
+            rpmbuild --define "_topdir $(pwd)/$RPM_DIR" -bb $RPM_DIR/SPECS/service-monitor.spec
+            # 复制 rpm 到 bin
+            cp $RPM_DIR/RPMS/x86_64/service-monitor-${{ github.ref_name }}-1.x86_64.rpm ./bin/
+          fi
+
+      # 6. Upload to GitHub Release
       - name: Upload to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./bin/service-monitor-${{ github.ref_name }}-${{ matrix.name }}*
+          files: ./bin/service-monitor-${{ github.ref_name }}-Windows.exe
+            ./bin/service-monitor-${{ github.ref_name }}-Debian.deb
+            ./bin/service-monitor-${{ github.ref_name }}-RHEL.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
