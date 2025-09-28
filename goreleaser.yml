@@ -9,6 +9,7 @@ builds:
     goarch:
       - amd64
     binary: service-monitor
+    main: ./cmd/main
   - id: linux
     env:
       - CGO_ENABLED=0
@@ -17,11 +18,9 @@ builds:
     goarch:
       - amd64
     binary: service-monitor
+    main: ./cmd/main
 archives:
   - id: default
-    builds:
-      - windows
-      - linux
     format: tar.gz
     files:
       - LICENSE
@@ -29,8 +28,6 @@ archives:
 nfpms:
   - id: deb
     package_name: service-monitor
-    builds:
-      - linux
     formats:
       - deb
     maintainer: "GitHub Actions <actions@github.com>"
@@ -40,8 +37,6 @@ nfpms:
     bindir: /usr/local/bin
   - id: rpm
     package_name: service-monitor
-    builds:
-      - linux
     formats:
       - rpm
     maintainer: "GitHub Actions <actions@github.com>"
