@@ -1,0 +1,45 @@
+name: Build and Release
+
+# 仅在 push tag 时触发
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-windows:
+    name: Build Windows EXE and Release
+    runs-on: windows-latest
+
+    steps:
+      # 1. 拉取仓库
+      - uses: actions/checkout@v3
+
+      # 2. 设置 Go 环境
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      # 3. 缓存 Go modules
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      # 4. 编译 Windows exe
+      - name: Build Windows EXE
+        run: go build -o ./bin/service-monitor.exe ./cmd/main.go
+
+      # 5. 创建 Release 并上传 exe
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ./bin/service-monitor.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

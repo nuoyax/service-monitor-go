@@ -49,19 +49,24 @@ go env -w GOPROXY=https://goproxy.cn,direct
 
 go env -w GOPROXY=https://mirrors.aliyun.com/goproxy/,direct
 
-
-
-
 用通配符，动态返回 HTML
 
 如果你想让任何 templates/xxx.html 自动对应 /xxx，可以写：
 
-r.GET("/:page", func(c *gin.Context) {
-    page := c.Param("page") + ".html"
-    c.HTML(http.StatusOK, page, gin.H{})
+r.GET("/:page", func(c \*gin.Context) {
+page := c.Param("page") + ".html"
+c.HTML(http.StatusOK, page, gin.H{})
 })
 
+Windows / Linux / Mac 跨平台构建
+Windows：
+set GOOS=windows
+set GOARCH=amd64
 
-访问 /monitor → 返回 monitor.html
+go build -o bin/project.exe cmd/main.go
 
-访问 /about → 返回 about.html
+Linux：
+GOOS=linux GOARCH=amd64 go build -o bin/project cmd/main.go
+
+Mac：
+GOOS=darwin GOARCH=amd64 go build -o bin/project cmd/main.go
