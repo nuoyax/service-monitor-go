@@ -1,20 +1,18 @@
-# goreleaser.yml
+version: 2
 project_name: service-monitor
-release:
-  github:
-    owner: nuoyax
-    name: service-monitor-go
-
 builds:
   - id: windows
+    env:
+      - CGO_ENABLED=0
     goos: windows
     goarch: amd64
     binary: service-monitor
   - id: linux
+    env:
+      - CGO_ENABLED=0
     goos: linux
     goarch: amd64
     binary: service-monitor
-
 archives:
   - id: default
     builds:
@@ -24,7 +22,6 @@ archives:
     files:
       - LICENSE
       - README.md
-
 nfpms:
   - id: deb
     builds:
@@ -43,6 +40,9 @@ nfpms:
     name: service-monitor
     maintainer: "GitHub Actions <actions@github.com>"
     license: MIT
-    homepage: https://github.com/your-github-username/your-repo-name
+    homepage: https://github.com/nuoyax/service-monitor-go
     description: "Service Monitor Tool"
     bindir: /usr/local/bin
+changelog:
+  skip: false
+  use: github
