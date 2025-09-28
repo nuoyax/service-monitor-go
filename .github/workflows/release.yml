@@ -3,30 +3,38 @@ name: Build and Release
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*.*.*" # 仅在 push tag 时触发
 
 jobs:
   release:
-    name: Build & Release All Platforms
+    name: Release All Platforms
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
+    steps:
+      # 1. Checkout code
+      - uses: actions/checkout@v3
+
+      # 2. Set up Go
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
           go-version: "1.21"
 
+      # 3. Clean dist directory
+      - name: Clean dist
+        run: rm -rf dist
+
+      # 4. Install packaging tools for Linux
       - name: Install packaging tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y rpm dpkg-dev
+          sudo apt-get install -y rpm dpkg-dev fakeroot
 
+      # 5. Run GoReleaser
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v4
         with:
           version: latest
-          args: release --rm-dist
+          args: release --snapshot=false --rm-dist=false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
