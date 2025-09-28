@@ -96,22 +96,22 @@ jobs:
             cp ./bin/service-monitor $RPM_DIR/SOURCES/service-monitor
             # 简单 spec 文件
             cat > $RPM_DIR/SPECS/service-monitor.spec <<EOF
-            Name: service-monitor
-            Version: ${{ github.ref_name }}
-            Release: 1
-            Summary: Service Monitor Tool
-            License: MIT
-            Group: Applications/System
-            BuildRoot: %{_tmppath}/%{name}-%{version}-build
-            %description
-            Service Monitor Tool
-            %prep
-            %build
-            %install
-            mkdir -p %{buildroot}/usr/local/bin
-            cp $RPM_DIR/SOURCES/service-monitor %{buildroot}/usr/local/bin/service-monitor
-            %files
-            /usr/local/bin/service-monitor
+Name: service-monitor
+Version: ${{ github.ref_name }}
+Release: 1
+Summary: Service Monitor Tool
+License: MIT
+Group: Applications/System
+BuildRoot: %{_tmppath}/%{name}-%{version}-build
+%description
+Service Monitor Tool
+%prep
+%build
+%install
+mkdir -p %{buildroot}/usr/local/bin
+cp $RPM_DIR/SOURCES/service-monitor %{buildroot}/usr/local/bin/service-monitor
+%files
+/usr/local/bin/service-monitor
             EOF
             rpmbuild --define "_topdir $(pwd)/$RPM_DIR" -bb $RPM_DIR/SPECS/service-monitor.spec
             # 复制 rpm 到 bin
