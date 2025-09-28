@@ -34,12 +34,14 @@ jobs:
 
       # 4. 编译 Windows exe
       - name: Build Windows EXE
-        run: go build -o ./bin/service-monitor.exe ./cmd/main.go
+        run: |
+          echo "Current tag: ${{ github.ref_name }}"
+          go build -o ./bin/service-monitor-${{ github.ref_name }}.exe ./cmd/main.go
 
       # 5. 创建 Release 并上传 exe
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./bin/service-monitor.exe
+          files: ./bin/service-monitor-${{ github.ref_name }}.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
