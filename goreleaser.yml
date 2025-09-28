@@ -1,0 +1,53 @@
+project_name: service-monitor
+builds:
+  - id: service-monitor
+    goos:
+      - windows
+      - linux
+    goarch:
+      - amd64
+    main: ./cmd/main.go
+    binary: service-monitor
+    ldflags: "-s -w"
+    goarm: 6
+    env:
+      - CGO_ENABLED=0
+archives:
+  - id: service-monitor
+    builds:
+      - service-monitor
+    format: tar.gz
+    files:
+      - LICENSE
+      - README.md
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+nfpm:
+  deb:
+    name: service-monitor
+    arch: amd64
+    version: "{{.Version}}"
+    license: MIT
+    maintainer: "GitHub Actions <actions@github.com>"
+    section: utils
+    description: "Service Monitor Tool"
+    vendor: "GitHub"
+    homepage: "https://github.com/nuoyax/service-monitor-go"
+    bindir: /usr/local/bin
+    package_name: "service-monitor-{{.Version}}-{{.Os}}-{{.Arch}}.deb"
+  rpm:
+    name: service-monitor
+    arch: x86_64
+    version: "{{.Version}}"
+    license: MIT
+    maintainer: "GitHub Actions <actions@github.com>"
+    description: "Service Monitor Tool"
+    vendor: "GitHub"
+    homepage: "https://github.com/nuoyax/service-monitor-go"
+    bindir: /usr/local/bin
+    package_name: "service-monitor-{{.Version}}-{{.Os}}-{{.Arch}}.rpm"
+changelog:
+  use: git
+release:
+  github:
+    owner: yourname
+    name: service-monitor
